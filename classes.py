@@ -1,0 +1,125 @@
+import socket
+from log import *
+from time import sleep
+from queue import Queue
+BUFFSIZE = 1024
+
+clientSqu = 0
+
+def ck(value,name):
+    print('name:    %s value:   %s' % (name,value))
+    return value
+
+class Client():
+    def __init__(self):
+        global clientSqu
+        self.clientSocket = socket.socket()
+        self.upSocket = socket.socket()
+        self.downSocket = socket.socket()
+        self.serverSocket = socket.socket()
+        self.num = clientSqu
+        self.clientSocketRecvQueue = Queue()
+        #self.upSocketRecvQueue = Queue()
+        self.downSocketRecvQueue = Queue()
+        self.serverSocketRecvQueue = Queue()
+
+        self.clientSocketSendQueue = Queue()
+        self.upSocketSendQueue = Queue()
+        #self.downSocketSendQueue = Queue()
+        self.serverSocketSendQueue = Queue()
+
+        clientSqu += 1
+
+    def clientSelf(self):
+        return self
+
+    def closeAllSockets(self):
+        self.clientSocket.close()
+        self.upSocket.close()
+        self.downSocket.close()
+        self.serverSocket.close()
+
+    def recv(self, sock=socket.socket()):
+        peeraddr = sock.getpeername()
+        buff = sock.recv(BUFFSIZE)
+        if len(buff) == 0:
+            log("num:   %s  %s:%s disconnected" %
+                (self.num, peeraddr[0], peeraddr[1]))
+            return buff
+        return buff
+
+    def send(self, sock=socket.socket(), buff=b''):
+        if buff == b'':
+            return 0
+        peeraddr = sock.getpeername()
+        re = sock.send(buff)
+        if re:
+            log("num:   %s  send %s btyes to %s:%s" %
+                (self.num, re, peeraddr[0], peeraddr[1]))
+        return re
+
+    #
+    #
+    #
+    # clientSocket 的方法
+
+    def clientSocketRecv(self):  # recv date from client
+        buff = self.recv(self.clientSocket)
+        
+        bl = len(buff)
+        if bl > 0:
+            self.clientSocketRecvQueue.put(buff)
+        return bl
+
+    def clientSocketSend(self):  # send data to client
+        if self.clientSocketSendQueue.qsize() > 0:
+            return self.send(self.clientSocket, self.clientSocketSendQueue.get())
+        return 0
+    #
+    #
+    #
+    # upSocket 的方法
+
+    def upSocketRecv(self):
+        buff = self.recv(self.upSocket)
+        bl = len(buff)
+        if bl > 0:
+            log('upSocket recv %s bytes' % bl)
+        return bl
+
+    def upSocketSend(self):
+        if self.upSocketSendQueue.qsize() > 0:
+            return self.send(self.upSocket, self.upSocketSendQueue.get())
+        return 0
+    #
+    #
+    #
+    # downSocket 的方法
+
+    def downSocketRecv(self):
+        buff = self.recv(self.downSocket)
+        bl = len(buff)
+        if bl > 0:
+            self.downSocketRecvQueue.put(buff)
+        return bl
+
+    # def downSocketSend(self):
+    #     if self.downSocketSendQueue.qsize() > 0:
+    #         return self.send(self.downSocket, self.downSocketSendQueue.get())
+    #     return 0
+    #
+    #
+    #
+    # serverSocket 的方法
+
+    def serverSocketRecv(self):
+        buff = self.recv(self.serverSocket)
+        bl = len(buff)
+        if bl > 0:
+            self.serverSocketRecvQueue.put(buff)
+        return bl
+
+    def serverSocketSend(self):
+        if self.serverSocketSendQueue.qsize() > 0:
+            return self.send(self.serverSocket, self.serverSocketSendQueue.get())
+        return 0

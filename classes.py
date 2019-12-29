@@ -3,7 +3,7 @@ from threading import Thread
 from log import *
 from time import sleep
 from queue import Queue
-BUFFSIZE = 1024
+BUFFSIZE = 19024
 
 clientSqu = 0
 

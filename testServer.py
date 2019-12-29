@@ -1,7 +1,10 @@
 #!/usr/bin/python3
 import socket,select
+from log import log
 sl = socket.socket()
-addr = ('0.0.0.0',22005)
+addr = ('0.0.0.0',4445)
+
+sl.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sl.bind(addr)
 sl.listen()
 print(addr,'listening ')
@@ -22,5 +25,5 @@ while True:
                 s.close()
                 rlist.remove(s)
             else:
-                print('from %s recv %s bytes' % (ad.__str__(),bl))
+                log('from %s recv %s bytes' % (ad.__str__(),bl))
                 #s.send(buff)

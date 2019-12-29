@@ -7,7 +7,7 @@ import socket,select,time
 from log import *
 from queue import Queue
 def socketbufftest():
-    addr = ('ras.com',5555)
+    addr = ('ras.com',4445)
     s = socket.socket()
     s.connect(addr)
     buff = bytes(1024)

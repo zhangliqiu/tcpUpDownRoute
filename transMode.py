@@ -21,20 +21,23 @@ disLists = True
 MODE = sys.argv[1]
 print('MODE=',MODE)
 
+
 # client mode need argvs
 DownServerAddr = ('127.0.0.1', 50002)
-UpServerAddr = ('127.0.0.1', 50001)
+UpServerAddr = ('127.0.0.1', 50003)
 clientListenSocketAddr = ('0.0.0.0', 55000)
 clientListenSocket = socket.socket()
 clientListenSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 # trans mode nedd argvs
-transListenDownSocketAddr = ('0.0.0.0', 55001)
+transListenDownSocketAddr = UpServerAddr
+transUpSocketAddr = ('127.0.0.1',4445)
 transListenDownSocekt = socket.socket()
 transListenDownSocekt.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 # server mode need argvs
-serverListenDownSocketAddr = ('0.0.0.0', 50001)
-serverListenUpSocketAddr = ('0.0.0.0', 50002)
+serverListenUpSocketAddr = DownServerAddr
+serverListenDownSocketAddr = transUpSocketAddr
+# serverListenDownSocketAddr = UpServerAddr
 remoteSocketAddr = ('127.0.0.1', 22)
 serverListenUpSocket = socket.socket()
 serverListenDownSocket = socket.socket()
@@ -60,7 +63,7 @@ def listenSockPrepare(sock, addr):
     #xlist.append(sock)
 
 
-def accept(listenSocket=socket.socket()):
+def accept(listenSocket):
     sock, addr = listenSocket.accept()
     log('%s:%s connected' % (addr[0], addr[1]))
     return sock
@@ -98,7 +101,7 @@ def modeClientAccept():  # Client mode to accept a connection and make a client
         acceptSocket.close()
 
 
-def modeClientClientDie(client=Client()):  # Client mode to close a client
+def modeClientClientDie(client):  # Client mode to close a client
     rlist.remove(client.clientSocket)
     rlist.remove(client.upSocket)
     rlist.remove(client.downSocket)
@@ -117,7 +120,7 @@ def modeTransAccept():  # trans mode to accepte a connection and make a client
     acceptSocekt = accept(transListenDownSocekt)
     client = Client()
     client.downSocket = acceptSocekt
-    if connect(client.upSocket, transListenDownSocketAddr):
+    if connect(client.upSocket, transUpSocketAddr):
         # care about reading event
         rlist.append(client.downSocket)
         rlist.append(client.upSocket)
@@ -143,7 +146,7 @@ def modeTransClientDie(client=Client()):  # trans mode to close a client
 
 
 # server mode to  make a client
-def modeServerAccept(upSocket=socket.socket(), downSocket=socket.socket()):
+def modeServerAccept(upSocket, downSocket):
     global modeServerIsClientConnecting
     client = Client()
     client.downSocket = downSocket
@@ -165,7 +168,7 @@ def modeServerAccept(upSocket=socket.socket(), downSocket=socket.socket()):
         modeServerIsClientConnecting = False
 
 
-def modeServerClientDie(client=Client()):  # trans mode to close a client
+def modeServerClientDie(client):  # trans mode to close a client
     rlist.remove(client.upSocket)
     rlist.remove(client.downSocket)
     rlist.remove(client.serverSocket)
@@ -258,8 +261,7 @@ else:
     listenSockPrepare(serverListenDownSocket, serverListenDownSocketAddr)
 ifreSelect = False
 while True: 
-    rs, ws, es = select.select(rlist, wlist, xlist)   
-    
+    rs, ws, es = select.select(rlist, wlist, xlist)      
     for s in rs:
         # accept client connect
         # client mode

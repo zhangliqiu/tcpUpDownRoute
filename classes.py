@@ -1,4 +1,5 @@
 import socket
+from threading import Thread
 from log import *
 from time import sleep
 from queue import Queue
@@ -9,6 +10,7 @@ clientSqu = 0
 def ck(value,name):
     print('name:    %s value:   %s' % (name,value))
     return value
+
 
 class Client():
     def __init__(self):
@@ -39,20 +41,27 @@ class Client():
         self.downSocket.close()
         self.serverSocket.close()
 
-    def recv(self, sock=socket.socket()):
-        peeraddr = sock.getpeername()
-        buff = sock.recv(BUFFSIZE)
-        if len(buff) == 0:
-            log("num:   %s  %s:%s disconnected" %
-                (self.num, peeraddr[0], peeraddr[1]))
-            return buff
+    def recv(self, sock):
+        try:
+            peeraddr = sock.getpeername()
+            buff = sock.recv(BUFFSIZE)
+        except Exception as identifier:
+            buff = b''
+            peeraddr = ('','')
+        if buff == b'':
+            log('num:   %s %s:%s disconnected' % (self.num, peeraddr[0], peeraddr[1]))
         return buff
 
-    def send(self, sock=socket.socket(), buff=b''):
+    def send(self, sock, buff=b''):
         if buff == b'':
             return 0
-        peeraddr = sock.getpeername()
-        re = sock.send(buff)
+        try:
+            peeraddr = sock.getpeername()
+            re = sock.send(buff)
+        except Exception as identifier:
+            re = 0
+            peeraddr = ('','')
+        
         if re:
             log("num:   %s  send %s btyes to %s:%s" %
                 (self.num, re, peeraddr[0], peeraddr[1]))
@@ -103,14 +112,7 @@ class Client():
             self.downSocketRecvQueue.put(buff)
         return bl
 
-    # def downSocketSend(self):
-    #     if self.downSocketSendQueue.qsize() > 0:
-    #         return self.send(self.downSocket, self.downSocketSendQueue.get())
-    #     return 0
-    #
-    #
-    #
-    # serverSocket 的方法
+
 
     def serverSocketRecv(self):
         buff = self.recv(self.serverSocket)

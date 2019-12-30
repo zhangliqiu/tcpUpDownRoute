@@ -32,6 +32,8 @@ class Client():
         
         self.transDataSize = 0
         self.lastPrintSpeedTime = 0
+        self.clientFuckGFW = False
+        self.serverFuckGFW = False
         clientSqu += 1
 
     def clientSelf(self):
@@ -110,6 +112,10 @@ class Client():
     def downSocketRecv(self):
         buff = self.recv(self.downSocket)
         bl = len(buff)
+        if self.clientFuckGFW:
+            self.clientFuckGFW = False
+            self.serverFuckGFW = False
+            return bl
         if bl > 0:
             self.downSocketRecvQueue.put(buff)
         return bl

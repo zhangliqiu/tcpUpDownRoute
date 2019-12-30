@@ -24,6 +24,12 @@ print('MODE=', MODE)
 config = configparser.ConfigParser()
 config.read('config.ini')
 di = config._sections
+with open('httpRequest','rb') as fl:
+    FUCKGFW_CLIENT_SEND = fl.read()
+with open('httpRespond','rb') as fl:
+    FUCKGFW_SERVER_SEND = fl.read()
+
+
 
 # client mode need argvs
 DownServerAddr = strAddrToAddr(di['client']['downserveraddr'])
@@ -88,6 +94,10 @@ def modeClientAccept():  # Client mode to accept a connection and make a client
     client.clientSocket = acceptSocket
     if connect(client.upSocket, UpServerAddr):
         if connect(client.downSocket, DownServerAddr):
+            # fuck GFW
+            client.clientFuckGFW = True
+            client.downSocket.send(FUCKGFW_CLIENT_SEND)
+
             # care about reading event
             rlist.append(client.clientSocket)
             rlist.append(client.upSocket)
@@ -159,6 +169,8 @@ def modeServerAccept(upSocket, downSocket):
     client = Client()
     client.downSocket = downSocket
     client.upSocket = upSocket
+    client.serverFuckGFW = True
+    client.upSocket.send(FUCKGFW_SERVER_SEND)
     if connect(client.serverSocket, remoteSocketAddr):
         # care about reading event
         rlist.append(client.downSocket)

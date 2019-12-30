@@ -3,12 +3,19 @@ from threading import Thread
 from log import *
 from time import sleep
 from queue import Queue
+from cryptography.fernet import Fernet
+
+
+beEncry = True
+key = b'OJ6koNlaMwsmg9jT3_JzH3mMvur00lbAXEv1Kfkt1D8='
+Encry = Fernet(key)
 BUFFSIZE = 19024
 
 clientSqu = 0
 
-def ck(value,name):
-    print('name:    %s value:   %s' % (name,value))
+
+def ck(value, name):
+    print('name:    %s value:   %s' % (name, value))
     return value
 
 
@@ -29,11 +36,12 @@ class Client():
         self.upSocketSendQueue = Queue()
         #self.downSocketSendQueue = Queue()
         self.serverSocketSendQueue = Queue()
-        
+
         self.transDataSize = 0
         self.lastPrintSpeedTime = 0
         self.clientFuckGFW = False
         self.serverFuckGFW = False
+        self.mode = ''
         clientSqu += 1
 
     def clientSelf(self):
@@ -51,9 +59,10 @@ class Client():
             buff = sock.recv(BUFFSIZE)
         except Exception as identifier:
             buff = b''
-            peeraddr = ('','')
+            peeraddr = ('', '')
         if buff == b'':
-            log('num:   %s %s:%s disconnected' % (self.num, peeraddr[0], peeraddr[1]))
+            log('num:   %s %s:%s disconnected' %
+                (self.num, peeraddr[0], peeraddr[1]))
         return buff
 
     def send(self, sock, buff=b''):
@@ -64,8 +73,8 @@ class Client():
             re = sock.send(buff)
         except Exception as identifier:
             re = 0
-            peeraddr = ('','')
-        
+            peeraddr = ('', '')
+
         if re:
             log("num:   %s  send %s btyes to %s:%s" %
                 (self.num, re, peeraddr[0], peeraddr[1]))
@@ -78,7 +87,7 @@ class Client():
 
     def clientSocketRecv(self):  # recv date from client
         buff = self.recv(self.clientSocket)
-        
+
         bl = len(buff)
         if bl > 0:
             self.clientSocketRecvQueue.put(buff)
@@ -119,8 +128,6 @@ class Client():
         if bl > 0:
             self.downSocketRecvQueue.put(buff)
         return bl
-
-
 
     def serverSocketRecv(self):
         buff = self.recv(self.serverSocket)

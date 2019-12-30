@@ -25,5 +25,6 @@ while True:
                 s.close()
                 rlist.remove(s)
             else:
-                log('from %s recv %s bytes' % (ad.__str__(),bl))
+                #log('from %s recv %s bytes' % (ad.__str__(),bl))
+                print(buff)
                 #s.send(buff)

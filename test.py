@@ -16,10 +16,4 @@ def socketbufftest():
         if ws:
             s.send(buff)
             
-
-with open('httpRequest','rb') as fl:
-    strf = fl.read()
-    print(strf)
-with open('httpRespond','rb') as fl:
-    strf = fl.read()
-    print(strf)
+import OpenSSL

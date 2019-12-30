@@ -96,6 +96,7 @@ def modeClientAccept():  # Client mode to accept a connection and make a client
         if connect(client.downSocket, DownServerAddr):
             # fuck GFW
             client.clientFuckGFW = True
+            client.mode = 'client'
             client.downSocket.send(FUCKGFW_CLIENT_SEND)
 
             # care about reading event
@@ -139,6 +140,7 @@ def modeTransAccept():  # trans mode to accepte a connection and make a client
     client.downSocket = acceptSocekt
     if connect(client.upSocket, transUpSocketAddr):
         # care about reading event
+        client.mode = 'trans'
         rlist.append(client.downSocket)
         rlist.append(client.upSocket)
         # care about writing event
@@ -172,6 +174,7 @@ def modeServerAccept(upSocket, downSocket):
     client.serverFuckGFW = True
     client.upSocket.send(FUCKGFW_SERVER_SEND)
     if connect(client.serverSocket, remoteSocketAddr):
+        client.mode = 'server'
         # care about reading event
         rlist.append(client.downSocket)
         rlist.append(client.serverSocket)

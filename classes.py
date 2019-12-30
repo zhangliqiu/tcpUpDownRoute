@@ -29,7 +29,9 @@ class Client():
         self.upSocketSendQueue = Queue()
         #self.downSocketSendQueue = Queue()
         self.serverSocketSendQueue = Queue()
-
+        
+        self.transDataSize = 0
+        self.lastPrintSpeedTime = 0
         clientSqu += 1
 
     def clientSelf(self):

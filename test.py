@@ -16,6 +16,5 @@ def socketbufftest():
         if ws:
             s.send(buff)
             
-       
-socketbufftest()
-
+with open('log.log','a') as fl:
+        fl.writelines('mes')

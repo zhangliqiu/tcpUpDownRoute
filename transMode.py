@@ -100,6 +100,7 @@ def modeClientAccept():  # Client mode to accept a connection and make a client
             funMap[client.upSocket] = client.clientSelf
             funMap[client.downSocket] = client.clientSelf
             # add to clientList
+            client.lastPrintSpeedTime = time.time()
             clientList.append(client)
         else:
             acceptSocket.close()
@@ -136,6 +137,7 @@ def modeTransAccept():  # trans mode to accepte a connection and make a client
         funMap[client.upSocket] = client.clientSelf
         funMap[client.downSocket] = client.clientSelf
         # add to clientList
+        client.lastPrintSpeedTime = time.time()
         clientList.append(client)
 
 
@@ -170,6 +172,7 @@ def modeServerAccept(upSocket, downSocket):
         funMap[client.downSocket] = client.clientSelf
         funMap[client.serverSocket] = client.clientSelf
         # add to clientList
+        client.lastPrintSpeedTime = time.time()
         clientList.append(client)
         modeServerIsClientConnecting = False
 
@@ -190,14 +193,14 @@ def modeServerClientDie(client):  # trans mode to close a client
 
 
 def clientDie(client):
-    log('断开前：%s' % sumList())
+    #log('断开前：%s' % sumList())
     if MODE == 'client':
         modeClientClientDie(client)
     elif MODE == 'trans':
         modeTransClientDie(client)
     else:
         modeServerClientDie(client)
-    log('断开后：%s' % sumList())
+    #log('断开后：%s' % sumList())
 
 # common mode ,client or trans or server, to dear the event from client
 
@@ -255,7 +258,16 @@ def queueManage(client=Client()):
 def sendData(s):  # common mode , to send all needed to sending
     client = funMap[s]()
     if s == client.clientSocket:
-        client.clientSocketSend()
+        now = time.time()
+        tt = now - client.lastPrintSpeedTime
+        if tt > 2:
+            speed = client.transDataSize / 2 / 1024
+            if speed > 10:
+                log('%s kb/s' % int(speed),True,True)
+            client.transDataSize = 0
+            client.lastPrintSpeedTime = now
+
+        client.transDataSize += client.clientSocketSend()       
     elif s == client.upSocket:
         client.upSocketSend()
     elif s == client.serverSocket:

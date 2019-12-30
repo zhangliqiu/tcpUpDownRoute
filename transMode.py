@@ -175,6 +175,8 @@ def modeServerAccept(upSocket, downSocket):
         client.lastPrintSpeedTime = time.time()
         clientList.append(client)
         modeServerIsClientConnecting = False
+    else:
+        client.closeAllSockets()
 
 
 def modeServerClientDie(client):  # trans mode to close a client
@@ -298,9 +300,9 @@ while True:
         # accept client connect
         # client mode
         if s == clientListenSocket:
-            log('连接前：%s' % sumList())
+            #log('连接前：%s' % sumList())
             modeClientAccept()
-            log('连接后：%s' % sumList())
+            #log('连接后：%s' % sumList())
         # trans mode
         elif s == transListenDownSocekt:
             modeTransAccept()
@@ -308,10 +310,10 @@ while True:
         elif s == serverListenUpSocket:
             modeServerTempUpSocket = accept(s)
             if modeServerIsClientConnecting == True:
-                log('连接前：%s' % sumList())
+                #log('连接前：%s' % sumList())
                 modeServerAccept(modeServerTempUpSocket,
                                  modeServerTempDownSocket)
-                log('连接后：%s' % sumList())
+                #log('连接后：%s' % sumList())
             else:
                 log('upSocket already connected, waitting for downSocket connectting....')
                 modeServerIsClientConnecting = True

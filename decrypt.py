@@ -1,8 +1,31 @@
 #!/usr/bin/python3
+import time
+key = b'ddfasfasdfasd'
+lenKey = len(key)
+def encrypt(data):
+    edata = b''
+    n = 0
+    cc = {}
+    for t in data:
+        
+        n += 1
 
-from cryptography.fernet import Fernet
-key = b'OJ6koNlaMwsmg9jT3_JzH3mMvur00lbAXEv1Kfkt1D8='
-data = b'OJ6koNlaMwsmg9jT3dfadsfasdfa_JzH3mMvur00lbAXEv1Kfkt1D8='
-f = Fernet(key)
-e_data = f.encrypt(data)
-f.decrypt(e_data)
+    
+
+def decrypt(data):
+    pass
+        
+mm = 1024*1024
+data = bytes(mm)
+now=time.time()
+kn = 0
+edata = {}
+for i in range(0,len(data)):
+    if kn == lenKey:
+        kn = 0
+    cc = data[i]^key[kn]
+    kn += 1
+    edata[i]=cc
+t = time.time() - now
+print(t)
+

@@ -1,14 +1,12 @@
 import socket
-from threading import Thread
 from log import *
 from time import sleep
 from queue import Queue
-from cryptography.fernet import Fernet
+from decrypt import encrypt ,decrypt
 
 
 beEncry = True
-key = b'OJ6koNlaMwsmg9jT3_JzH3mMvur00lbAXEv1Kfkt1D8='
-Encry = Fernet(key)
+
 BUFFSIZE = 19024
 
 clientSqu = 0
@@ -111,7 +109,11 @@ class Client():
 
     def upSocketSend(self):
         if self.upSocketSendQueue.qsize() > 0:
-            return self.send(self.upSocket, self.upSocketSendQueue.get())
+            buff = self.upSocketSendQueue.get()
+            if beEncry:
+                if self.mode == 'client' or self.mode == 'server':
+                    buff = encrypt(buff)
+            return self.send(self.upSocket, buff)
         return 0
     #
     #
@@ -126,6 +128,9 @@ class Client():
             self.serverFuckGFW = False
             return bl
         if bl > 0:
+            if beEncry :
+                if self.mode == 'client' or self.mode == 'server':
+                    buff = decrypt(buff)
             self.downSocketRecvQueue.put(buff)
         return bl
 

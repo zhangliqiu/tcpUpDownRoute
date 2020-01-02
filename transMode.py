@@ -7,6 +7,7 @@ import socket
 import select
 import sys
 import configparser
+
 funMap = {}  # socket 处理方法索引
 rlist = []
 wlist = []
@@ -24,6 +25,7 @@ print('MODE=', MODE)
 config = configparser.ConfigParser()
 config.read('config.ini')
 di = config._sections
+
 with open('httpRequest','rb') as fl:
     FUCKGFW_CLIENT_SEND = fl.read()
 with open('httpRespond','rb') as fl:
@@ -56,6 +58,8 @@ modeServerIsClientConnecting = False
 # server mode temp var to save the connecting socket
 modeServerTempUpSocket = None
 modeServerTempDownSocket = None
+
+
 
 
 def sumList():

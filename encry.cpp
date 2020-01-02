@@ -9,7 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 #define BUFFSIZE 1024 * 10
-#define SERVER_PORT 9999
+int SERVER_PORT=9999;
 char KEY[] = "\xfa\x30\xc5\xe2\x6d\xce";
 int KEY_LEN = 6;
 int readList[20];
@@ -89,6 +89,8 @@ int main(int argc, char *argv[])
     int serverFd, new_fd, struct_len, numbytes, i;
     struct sockaddr_in server_addr;
     struct sockaddr_in client_addr;
+
+    SERVER_PORT = atoi(argv[1]);
 
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(SERVER_PORT);

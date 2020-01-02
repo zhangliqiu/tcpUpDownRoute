@@ -1,7 +1,15 @@
 #!/usr/bin/python3
 import socket
+import configparser
+
+config = configparser.ConfigParser()
+config.read('config.ini')
+di = config._sections
+encryPort = int(di['encry']['port'])
+
+
 BUFFSIZE = 1024*10
-addr = ('127.0.0.1', 9999)
+addr = ('127.0.0.1', encryPort)
 cl = socket.socket()
 cl.connect(addr)
 

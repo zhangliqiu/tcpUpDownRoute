@@ -5,7 +5,7 @@ from queue import Queue
 from decrypt import encrypt ,decrypt
 
 
-beEncry = True
+beEncry = False
 
 BUFFSIZE = 1024*10
 

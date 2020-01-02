@@ -9,7 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 #define BUFFSIZE 1024*10
-#define SERVER_PORT 8000
+#define SERVER_PORT 9999
 char KEY[]="\xfa\x30\xc5\xe2\x6d\xce";
 int KEY_LEN=6;
 void Encry(char* buff,int len)

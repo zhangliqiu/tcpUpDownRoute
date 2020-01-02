@@ -7,7 +7,7 @@ from decrypt import encrypt ,decrypt
 
 beEncry = True
 
-BUFFSIZE = 19024
+BUFFSIZE = 1024*10
 
 clientSqu = 0
 

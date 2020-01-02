@@ -1,72 +1,78 @@
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <unistd.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <stdio.h>
 #include <errno.h>
-#include <string.h>
 #include <stdlib.h>
-
-#define SERV_PORT 8000
-
-int main()
+#include <string.h>
+#include <unistd.h>
+#define BUFFSIZE 1024*10
+#define SERVER_PORT 8000
+char KEY[]="\xfa\x30\xc5\xe2\x6d\xce";
+int KEY_LEN=6;
+void Encry(char* buff,int len)
 {
-    /* sock_fd --- socket文件描述符 创建udp套接字*/
-    int sock_fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (sock_fd < 0)
+
+    int i = 0;
+    int j = 0;
+    for(;i<len;i++)
     {
-        perror("socket");
-        exit(1);
+        if(j==KEY_LEN)
+            j=0;
+        buff[i] = buff[i]^KEY[j];
+
+        j++;
     }
+}
 
-    /* 将套接字和IP、端口绑定 */
-    struct sockaddr_in addr_serv;
-    int len;
-    memset(&addr_serv, 0, sizeof(struct sockaddr_in)); //每个字节都用0填充
-    addr_serv.sin_family = AF_INET;                    //使用IPV4地址
-    addr_serv.sin_port = htons(SERV_PORT);             //端口
-    /* INADDR_ANY表示不管是哪个网卡接收到数据，只要目的端口是SERV_PORT，就会被该应用程序接收到 */
-    addr_serv.sin_addr.s_addr = htonl(INADDR_ANY); //自动获取IP地址
-    len = sizeof(addr_serv);
+int main(int argc, char *argv[])
+{
+    int fd, new_fd, struct_len, numbytes,i;
+    struct sockaddr_in server_addr;
+    struct sockaddr_in client_addr;
+    char buff[BUFFSIZE];
 
-    /* 绑定socket */
-    if (bind(sock_fd, (struct sockaddr *)&addr_serv, sizeof(addr_serv)) < 0)
-    {
-        perror("bind error:");
-        exit(1);
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(SERVER_PORT);
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    bzero(&(server_addr.sin_zero), 8);
+    struct_len = sizeof(struct sockaddr_in);
+
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+
+    int opt = 1;
+    if(setsockopt(fd, SOL_SOCKET,SO_REUSEADDR, (const void *) &opt, sizeof(opt))){
+        perror("setsockopt");
+        return -1;
     }
-
-    int recv_num;
-    int send_num;
-    char send_buf[20] = "i am server!";
-    char recv_buf[20];
-    struct sockaddr_in addr_client;
-
-    while (1)
+    while(bind(fd, (struct sockaddr *)&server_addr, struct_len) == -1);
+    printf("Bind Success!\n");
+    while(listen(fd, 10) == -1);
+    printf("Listening on %d port...\n",SERVER_PORT);
+    char recvBuff[BUFFSIZE];
+    while(1)
     {
-        printf("server wait:\n");
-
-        recv_num = recvfrom(sock_fd, recv_buf, sizeof(recv_buf), 0, (struct sockaddr *)&addr_client, (socklen_t *)&len);
-
-        if (recv_num < 0)
+        numbytes = 0;
+        int nt = 0;
+        new_fd = accept(fd, (struct sockaddr *)&client_addr, (socklen_t *)&struct_len);
+        while (1)
         {
-            perror("recvfrom error:");
-            exit(1);
+            nt = recv(new_fd,&recvBuff,BUFFSIZE,0);
+            if(nt==0)
+                break;
+            printf("recv data size %d\n",nt);
+            Encry(recvBuff,nt);
+            nt = send(new_fd,(const char*)recvBuff,nt,0);
+            printf("send data size %d\n",nt);
         }
+        
+        
+        close(new_fd);
+        //break;
 
-        recv_buf[recv_num] = '\0';
-        printf("server receive %d bytes: %s\n", recv_num, recv_buf);
-
-        send_num = sendto(sock_fd, send_buf, recv_num, 0, (struct sockaddr *)&addr_client, len);
-
-        if (send_num < 0)
-        {
-            perror("sendto error:");
-            exit(1);
-        }
     }
-
-    close(sock_fd);
-
+    close(fd);
     return 0;
 }

@@ -8,6 +8,8 @@ import select
 import sys
 import configparser
 
+ifFuckGFW = True
+
 funMap = {}  # socket 处理方法索引
 rlist = []
 wlist = []
@@ -63,7 +65,7 @@ modeServerTempDownSocket = None
 
 
 def sumList():
-    return ('rlist:%s     wlist:%s    xlist:%s    funMap:%s' % (len(rlist), len(wlist), len(xlist), len(funMap)))
+    print ('rlist:%s     wlist:%s    xlist:%s    funMap:%s' % (len(rlist), len(wlist), len(xlist), len(funMap)))
 
 
 def listen(sock=socket.socket()):
@@ -98,11 +100,10 @@ def modeClientAccept():  # Client mode to accept a connection and make a client
     client.clientSocket = acceptSocket
     if connect(client.upSocket, UpServerAddr):
         if connect(client.downSocket, DownServerAddr):
-            # fuck GFW
-            client.clientFuckGFW = True
+            #fuck GFW
             client.mode = 'client'
             client.downSocket.send(FUCKGFW_CLIENT_SEND)
-
+            client.downSocket.recv(BUFFSIZE)
             # care about reading event
             rlist.append(client.clientSocket)
             rlist.append(client.upSocket)
@@ -175,7 +176,8 @@ def modeServerAccept(upSocket, downSocket):
     client = Client()
     client.downSocket = downSocket
     client.upSocket = upSocket
-    client.serverFuckGFW = True
+    # client.serverFuckGFW = True
+    client.upSocket.recv(BUFFSIZE)
     client.upSocket.send(FUCKGFW_SERVER_SEND)
     if connect(client.serverSocket, remoteSocketAddr):
         client.mode = 'server'
@@ -231,53 +233,58 @@ def clientEventResolu(s):
     # from client.clientSocket
     if s == client.clientSocket:
         buffsize = client.clientSocketRecv()
-        if buffsize == 0:
+        if buffsize == -1:
             clientDie(client)
             return False
     # from client.upSocket
     elif s == client.upSocket:
         buffsize = client.upSocketRecv()
-        if buffsize == 0:
+        if buffsize == -1:
             clientDie(client)
             return False
     # from client.downSocket
     elif s == client.downSocket:
         buffsize = client.downSocketRecv()
-        if buffsize == 0:
+        if buffsize == -1:
             clientDie(client)
             return False
     elif s == client.serverSocket:
         buffsize = client.serverSocketRecv()
-        if buffsize == 0:
+        if buffsize == -1:
             clientDie(client)
             return False
     return True
 
 
-def queueManage(client=Client()):
+def queueManage(client,s):
     if MODE == 'client':
-        # client.clientSocketRecvQueue      -->     client.upSocketSendQueue
-        # client.downSocketRecvQueue        -->     client.clientSocketSendQueue
-        while client.clientSocketRecvQueue.qsize():
-            client.upSocketSendQueue.put(client.clientSocketRecvQueue.get())
-        while client.downSocketRecvQueue.qsize():
-            client.clientSocketSendQueue.put(client.downSocketRecvQueue.get())
+        # client.clientSocketRecvBuff      -->     client.upSocketSendBuff
+        # client.downSocketRecvBuff        -->     client.clientSocketSendBuff
+        if client.clientSocket == s:
+            client.clientSocketSendBuff = client.downSocketRecvBuff
+            client.downSocketRecvBuff = b''
+        if client.upSocket == s:
+            client.upSocketSendBuff = client.clientSocketRecvBuff
+            client.clientSocketRecvBuff = b''
     elif MODE == 'trans':
-        # client.downSocketRecvQueue        -->     client.upSocketSendQueue
-        while client.downSocketRecvQueue.qsize():
-            client.upSocketSendQueue.put(client.downSocketRecvQueue.get())
+        # client.downSocketRecvBuff        -->     client.upSocketSendBuff
+        if client.upSocket == s:
+            client.upSocketSendBuff = client.downSocketRecvBuff
+            client.downSocketRecvBuff = b''
     else:
         # MODE == 'server'
-        # client.serverSocketRecvQueue      -->     client.upSocketSendQueue
-        # client.downSocketRecvQueue        -->     client.serverSocketSendQueue
-        while client.serverSocketRecvQueue.qsize():
-            client.upSocketSendQueue.put(client.serverSocketRecvQueue.get())
-        while client.downSocketRecvQueue.qsize():
-            client.serverSocketSendQueue.put(client.downSocketRecvQueue.get())
+        # client.serverSocketRecvBuff      -->     client.upSocketSendBuff
+        # client.downSocketRecvBuff        -->     client.serverSocketSendBuff
+        if client.upSocket == s:
+            client.upSocketSendBuff = client.serverSocketRecvBuff
+            client.serverSocketRecvBuff = b'' 
+        if client.serverSocket == s:
+            client.serverSocketSendBuff = client.downSocketRecvBuff
+            client.downSocketRecvBuff = b''   
 
 
-def sendData(s):  # common mode , to send all needed to sending
-    client = funMap[s]()
+def sendData(client,s):  # common mode , to send all needed to sending
+    
     if s == client.clientSocket:
         now = time.time()
         tt = now - client.lastPrintSpeedTime
@@ -355,15 +362,16 @@ while True:
 
     if ifreSelect:
         ifreSelect = False
+        sumList()
         continue
     for s in ws:
 
         #log('ws:%s wlist:%s' % (len(ws),len(wlist)))
         client = funMap[s]()
         # queue manage
-        queueManage(client)
+        queueManage(client,s)
         # only the client.upSocket ,clientSocket, serverSocket need send data
-        sendData(s)
+        sendData(client,s)
     for s in es:
         pass
     time.sleep(sleepTime)

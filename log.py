@@ -6,7 +6,7 @@ def strToFile(mes):
         fl.write(mes)
 
 
-def log(mes, isdis=True, toFile=False):
+def log(mes, isdis=False, toFile=False):
     now = time.asctime(time.localtime())
     if isdis:
         print('%s   %s' % (now, mes))

@@ -2,8 +2,7 @@ import socket
 from log import *
 from time import sleep
 from queue import Queue
-from decrypt import encrypt ,decrypt
-
+from Extest import doppel
 
 beEncry = False
 
@@ -11,11 +10,14 @@ BUFFSIZE = 1024*10
 
 clientSqu = 0
 
-
-def ck(value, name):
-    print('name:    %s value:   %s' % (name, value))
-    return value
-
+def encrypt(buff):
+    c = doppel(buff.hex())
+    d = bytes.fromhex(c)
+    return d
+def decrypt(buff):
+    c = doppel(buff.hex())
+    d = bytes.fromhex(c)
+    return d
 
 class Client():
     def __init__(self):
@@ -25,27 +27,23 @@ class Client():
         self.downSocket = socket.socket()
         self.serverSocket = socket.socket()
         self.num = clientSqu
-        self.clientSocketRecvQueue = Queue()
-        #self.upSocketRecvQueue = Queue()
-        self.downSocketRecvQueue = Queue()
-        self.serverSocketRecvQueue = Queue()
+        self.clientSocketRecvBuff = b''
+        self.downSocketRecvBuff = b''
+        self.serverSocketRecvBuff = b''
 
-        self.clientSocketSendQueue = Queue()
-        self.upSocketSendQueue = Queue()
-        #self.downSocketSendQueue = Queue()
-        self.serverSocketSendQueue = Queue()
+        self.clientSocketSendBuff = b''
+        self.upSocketSendBuff = b''
+        self.serverSocketSendBuff = b''
 
         self.transDataSize = 0
         self.lastPrintSpeedTime = 0
-        self.clientFuckGFW = False
-        self.serverFuckGFW = False
         self.mode = ''
         clientSqu += 1
 
     def clientSelf(self):
         return self
 
-    def closeAllSockets(self):
+    def closeAllSockets(self):        
         self.clientSocket.close()
         self.upSocket.close()
         self.downSocket.close()
@@ -53,29 +51,17 @@ class Client():
 
     def recv(self, sock):
         try:
-            peeraddr = sock.getpeername()
             buff = sock.recv(BUFFSIZE)
         except Exception as identifier:
             buff = b''
-            peeraddr = ('', '')
-        if buff == b'':
-            log('num:   %s %s:%s disconnected' %
-                (self.num, peeraddr[0], peeraddr[1]))
         return buff
 
     def send(self, sock, buff=b''):
-        if buff == b'':
-            return 0
         try:
-            peeraddr = sock.getpeername()
             re = sock.send(buff)
         except Exception as identifier:
-            re = 0
-            peeraddr = ('', '')
+            re = -1
 
-        if re:
-            log("num:   %s  send %s btyes to %s:%s" %
-                (self.num, re, peeraddr[0], peeraddr[1]))
         return re
 
     #
@@ -84,17 +70,18 @@ class Client():
     # clientSocket 的方法
 
     def clientSocketRecv(self):  # recv date from client
+        if self.clientSocketRecvBuff != b'':
+            return 0
         buff = self.recv(self.clientSocket)
-
         bl = len(buff)
-        if bl > 0:
-            self.clientSocketRecvQueue.put(buff)
+        if bl == 0:
+            return -1
+        self.clientSocketRecvBuff = buff
         return bl
 
     def clientSocketSend(self):  # send data to client
-        if self.clientSocketSendQueue.qsize() > 0:
-            return self.send(self.clientSocket, self.clientSocketSendQueue.get())
-        return 0
+        buff = self.clientSocketSendBuff
+        return self.send(self.clientSocket, buff)
     #
     #
     #
@@ -103,45 +90,46 @@ class Client():
     def upSocketRecv(self):
         buff = self.recv(self.upSocket)
         bl = len(buff)
-        if bl > 0:
-            log('upSocket recv %s bytes' % bl)
+        if bl == 0:
+            return -1
         return bl
 
     def upSocketSend(self):
-        if self.upSocketSendQueue.qsize() > 0:
-            buff = self.upSocketSendQueue.get()
-            if beEncry:
-                if self.mode == 'client' or self.mode == 'server':
-                    buff = encrypt(buff)
-            return self.send(self.upSocket, buff)
-        return 0
+        buff = self.upSocketSendBuff
+        if beEncry:
+            if self.mode == 'client' or self.mode == 'server':
+                buff = encrypt(buff)
+
+        return self.send(self.upSocket, buff)
     #
     #
     #
     # downSocket 的方法
 
     def downSocketRecv(self):
+        if self.downSocketRecvBuff != b'':
+            return 0
         buff = self.recv(self.downSocket)
         bl = len(buff)
-        if self.clientFuckGFW:
-            self.clientFuckGFW = False
-            self.serverFuckGFW = False
-            return bl
-        if bl > 0:
-            if beEncry :
-                if self.mode == 'client' or self.mode == 'server':
-                    buff = decrypt(buff)
-            self.downSocketRecvQueue.put(buff)
+
+        if bl == 0:
+            return -1
+        if beEncry :
+            if self.mode == 'client' or self.mode == 'server':
+                buff = decrypt(buff)
+        self.downSocketRecvBuff = buff
         return bl
 
     def serverSocketRecv(self):
+        if self.serverSocketRecvBuff != b'':
+            return 0
         buff = self.recv(self.serverSocket)
         bl = len(buff)
-        if bl > 0:
-            self.serverSocketRecvQueue.put(buff)
+        if bl == 0:
+            return -1
+        self.serverSocketRecvBuff = buff
         return bl
 
     def serverSocketSend(self):
-        if self.serverSocketSendQueue.qsize() > 0:
-            return self.send(self.serverSocket, self.serverSocketSendQueue.get())
-        return 0
+        buff = self.serverSocketSendBuff
+        return self.send(self.serverSocket, buff)
